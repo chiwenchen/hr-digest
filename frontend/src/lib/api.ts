@@ -12,10 +12,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
 
   if (res.status === 401) {
-    if (typeof window !== 'undefined') {
+    const error = await res.json().catch(() => ({ detail: 'Unauthorized' }));
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
       window.location.href = '/login';
     }
-    throw new Error('Unauthorized');
+    throw new Error(error.detail || 'Unauthorized');
   }
 
   if (!res.ok) {
