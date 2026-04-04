@@ -36,3 +36,20 @@ async def logout(response: Response):
 @router.get("/me")
 async def me(user: User = Depends(get_current_user)):
     return {"id": user.id, "email": user.email, "name": user.name, "role": user.role, "email_subscribed": user.email_subscribed}
+
+
+class UpdateSettings(BaseModel):
+    email_subscribed: bool
+
+
+@router.patch("/settings")
+async def update_settings(
+    body: UpdateSettings,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.id == user.id))
+    db_user = result.scalar_one()
+    db_user.email_subscribed = body.email_subscribed
+    await db.commit()
+    return {"email_subscribed": db_user.email_subscribed}
