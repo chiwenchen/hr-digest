@@ -71,15 +71,15 @@ export default function AdminBillsContent() {
   }
 
   if (loading) {
-    return <div className="p-8 text-gray-400">載入中...</div>;
+    return <div className="p-4 sm:p-8 text-gray-400">載入中...</div>;
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">法案管理</h1>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-5 sm:mb-6">法案管理</h1>
       {error && <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3">{error}</div>}
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
         <h2 className="font-semibold text-gray-700 mb-4">{editing !== null ? '編輯法案' : '新增法案'}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
@@ -161,8 +161,8 @@ export default function AdminBillsContent() {
 
       <div className="space-y-3">
         {bills.map((bill) => (
-          <div key={bill.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start justify-between gap-4">
-            <div>
+          <div key={bill.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start justify-between gap-3 sm:gap-4">
+            <div className="min-w-0 flex-1">
               <p className="font-medium text-gray-800 text-sm">{bill.title}</p>
               <p className="text-xs text-gray-400 mt-0.5">{bill.status}</p>
             </div>

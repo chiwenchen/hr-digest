@@ -185,4 +185,8 @@ async def test_dashboard(admin_client):
     assert resp.status_code == 200
     data = resp.json()
     assert "pending_news_count" in data
-    assert "latest_digest" in data
+    assert "latest_digest_id" in data
+    assert "latest_digest_status" in data
+    assert "latest_digest_year" in data
+    assert "latest_digest_month" in data
+    assert "latest_digest_published_at" in data

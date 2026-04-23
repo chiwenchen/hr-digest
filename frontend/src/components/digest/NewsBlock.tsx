@@ -8,7 +8,7 @@ interface Props {
 
 export default function NewsBlock({ items }: Props) {
   return (
-    <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
       <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
         人資新聞
@@ -18,8 +18,8 @@ export default function NewsBlock({ items }: Props) {
       ) : (
         <div className="space-y-5">
           {items.map((item, index) => (
-            <div key={item.id} className="flex gap-4 items-start">
-              <span className="text-2xl font-bold text-orange-200 w-8 shrink-0 leading-tight">
+            <div key={item.id} className="flex gap-3 sm:gap-4 items-start">
+              <span className="text-xl sm:text-2xl font-bold text-orange-200 w-6 sm:w-8 shrink-0 leading-tight">
                 {index + 1}
               </span>
               <div className="flex-1">

@@ -8,17 +8,13 @@ from app.services.news_crawler import NewsCrawler, RawNewsItem
 SAMPLE_MOL_HTML = """
 <html>
 <body>
-<div class="list">
-  <ul>
-    <li>
-      <a href="/1607/1632/news/12345">勞動部公告最新勞基法修正重點</a>
-      <span class="date">2024-03-15</span>
-    </li>
-    <li>
-      <a href="/1607/1632/news/12346">性別平等工作法修正草案說明</a>
-      <span class="date">2024-03-10</span>
-    </li>
-  </ul>
+<div class="item_list2">
+  <a href="/1607/1632/news/12345">勞動部公告最新勞基法修正重點</a>
+  <div>發布日期：2024-03-15</div>
+</div>
+<div class="item_list2">
+  <a href="/1607/1632/news/12346">性別平等工作法修正草案說明</a>
+  <div>發布日期：2024-03-10</div>
 </div>
 </body>
 </html>

@@ -43,26 +43,26 @@ export default function HomeContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {error ? (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-red-600">{error}</div>
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 sm:p-6 text-red-600 text-sm sm:text-base">{error}</div>
         ) : !digest ? (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-yellow-700">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 sm:p-6 text-yellow-700 text-sm sm:text-base">
             尚無已發布的月報
           </div>
         ) : (
           <>
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-800">
+            <div className="mb-5 sm:mb-6">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
                 {digest.year} 年 {digest.month} 月 人資法規月報
               </h1>
               {digest.published_at && (
-                <p className="text-sm text-gray-400 mt-1">
+                <p className="text-xs sm:text-sm text-gray-400 mt-1">
                   發布於 {new Date(digest.published_at).toLocaleDateString('zh-TW')}
                 </p>
               )}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <LawChangesBlock items={digest.law_changes} />
               <CalendarBlock items={digest.calendar} />
               <NewsBlock items={digest.news} />

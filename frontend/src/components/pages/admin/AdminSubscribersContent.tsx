@@ -37,15 +37,15 @@ export default function AdminSubscribersContent() {
   }
 
   if (loading) {
-    return <div className="p-8 text-gray-400">載入中...</div>;
+    return <div className="p-4 sm:p-8 text-gray-400">載入中...</div>;
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">使用者管理</h1>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-5 sm:mb-6">使用者管理</h1>
       {error && <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3">{error}</div>}
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
         <h2 className="font-semibold text-gray-700 mb-4">新增使用者</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -100,8 +100,8 @@ export default function AdminSubscribersContent() {
         )}
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
+        <table className="w-full text-sm min-w-[560px]">
           <thead className="bg-gray-50 border-b border-gray-100">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-gray-600">姓名</th>
