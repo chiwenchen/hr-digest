@@ -1,57 +1,49 @@
 from __future__ import annotations
 import pytest
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 from datetime import date
 from app.services.bill_crawler import BillCrawler, RawBillItem
 
 
-SAMPLE_BILL_HTML = """
-<html>
-<body>
-<table class="table">
-  <thead>
-    <tr><th>草案名稱</th><th>預告階段</th><th>公告日期</th></tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><a href="/1607/28162/28166/bill/001">勞動基準法第XX條修正草案</a></td>
-      <td>預告中</td>
-      <td>2024-03-20</td>
-    </tr>
-    <tr>
-      <td><a href="/1607/28162/28166/bill/002">就業服務法部分條文修正草案</a></td>
-      <td>已結束</td>
-      <td>2024-02-28</td>
-    </tr>
-  </tbody>
-</table>
-</body>
-</html>
-"""
+FIXTURE_DIR = Path(__file__).parent / "fixtures"
+MOL_DRAFTS_FIXTURE = (FIXTURE_DIR / "mol-drafts.html").read_text(encoding="utf-8")
 
 
-def test_parse_bill_html():
+def test_parse_mol_drafts_from_real_fixture():
+    """Parser must handle the real laws.mol.gov.tw/drafts.aspx layout.
+
+    Saved snapshot 2026-04-23 contains 10 draft rows. Verify the first row
+    parses title (cleaned of 預告終止日 suffix), full URL, stage, and ROC
+    date converted to Gregorian."""
     crawler = BillCrawler()
-    items = crawler.parse_mol_draft_html(SAMPLE_BILL_HTML)
+    items = crawler.parse_mol_draft_html(MOL_DRAFTS_FIXTURE)
 
-    assert len(items) == 2
-    assert items[0].title == "勞動基準法第XX條修正草案"
-    assert items[0].url == "https://www.mol.gov.tw/1607/28162/28166/bill/001"
-    assert items[0].stage == "預告中"
-    assert items[0].published_date == date(2024, 3, 20)
-    assert items[1].title == "就業服務法部分條文修正草案"
-    assert items[1].stage == "已結束"
-    assert items[1].published_date == date(2024, 2, 28)
+    assert len(items) == 10
+
+    first = items[0]
+    assert first.title == "地方主管機關受理最高負責人職場霸凌事件申訴處理辦法草案"
+    assert first.url == "https://laws.mol.gov.tw/news.aspx?msgid=6848&bak=0"
+    assert first.stage == "預告中"
+    assert first.published_date == date(2026, 4, 21)
+
+
+def test_parse_skips_header_row():
+    """Header row (公發布日 / 訊息摘要) must not become a draft item."""
+    crawler = BillCrawler()
+    items = crawler.parse_mol_draft_html(MOL_DRAFTS_FIXTURE)
+    assert all("公發布日" not in it.title for it in items)
+    assert all(it.url.startswith("https://laws.mol.gov.tw/") for it in items)
 
 
 @pytest.mark.asyncio
 async def test_crawl_returns_raw_items():
     crawler = BillCrawler()
 
-    with patch.object(crawler, "_fetch_html", new=AsyncMock(return_value=SAMPLE_BILL_HTML)):
+    with patch.object(crawler, "_fetch_html", new=AsyncMock(return_value=MOL_DRAFTS_FIXTURE)):
         items = await crawler.crawl()
 
     assert isinstance(items, list)
-    assert len(items) == 2
+    assert len(items) == 10
     assert all(isinstance(item, RawBillItem) for item in items)
     assert items[0].stage == "預告中"
