@@ -3,7 +3,7 @@ import logging
 from datetime import date
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.models import Digest, LawChange, NewsCandidate
+from app.db.models import Digest, LawChange, NewsCandidate, Bill
 from app.services.law_crawler import LawCrawler
 from app.services.news_crawler import NewsCrawler
 from app.services.bill_crawler import BillCrawler
@@ -26,6 +26,7 @@ class DigestBuilder:
         await self.db.flush()
         await self._process_law_changes(digest)
         await self._process_news(digest)
+        await self._process_bills()
         await self.db.commit()
         await self.db.refresh(digest)
         logger.info("Built digest draft %d for %d-%02d", digest.id, year, month)
@@ -48,6 +49,35 @@ class DigestBuilder:
                 change_summary=ai_result["summary"], action_items=ai_result["action_items"],
             )
             self.db.add(law_change)
+
+    async def _process_bills(self) -> None:
+        """Crawl MOL draft bills and upsert into Bill table by source_url.
+
+        Existing rows get current_stage + title refreshed. New rows get
+        enriched with impact_summary + hr_preparation via the summarizer."""
+        raw_items = await self.bill_crawler.crawl()
+        if not raw_items:
+            return
+        urls = [item.url for item in raw_items]
+        existing_result = await self.db.execute(select(Bill).where(Bill.source_url.in_(urls)))
+        existing_by_url = {b.source_url: b for b in existing_result.scalars().all()}
+        for item in raw_items:
+            existing = existing_by_url.get(item.url)
+            if existing:
+                existing.current_stage = item.stage
+                existing.title = item.title
+                continue
+            enrichment = await self.summarizer.generate_bill_action_items(
+                title=item.title, source_url=item.url, stage=item.stage,
+            )
+            self.db.add(Bill(
+                title=item.title,
+                source_url=item.url,
+                current_stage=item.stage,
+                impact_summary=enrichment.get("impact_summary"),
+                hr_preparation=enrichment.get("hr_preparation"),
+                is_active=True,
+            ))
 
     async def _process_news(self, digest: Digest) -> None:
         raw_items = await self.news_crawler.crawl()
