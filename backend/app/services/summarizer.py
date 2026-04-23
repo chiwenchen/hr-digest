@@ -54,6 +54,24 @@ class Summarizer:
         text = response.content[0].text
         return _extract_json(text)
 
+    async def generate_bill_action_items(self, title: str, source_url: str, stage: str) -> dict:
+        """Generate impact summary + HR preparation for a draft bill."""
+        response = await self.client.messages.create(
+            model=self.model, max_tokens=1024,
+            messages=[{"role": "user", "content": f"""你是一位台灣 HR 法規專家。以下是勞動部預告的法規草案，請分析對 HR 的可能影響：
+
+草案名稱：{title}
+目前階段：{stage}
+來源：{source_url}
+
+請回覆純 JSON 格式：
+{{"impact_summary": "若此草案通過對企業 HR 的主要影響（80-120字）", "hr_preparation": "HR 現在可以提前準備的具體事項（50-100字）"}}
+
+不要加入其他文字。"""}],
+        )
+        text = response.content[0].text
+        return _extract_json(text)
+
     async def generate_law_action_items(self, law_name: str, article_number: str, content: str, previous_content: str = None) -> dict:
         """Generate HR action items for a law change."""
         diff_context = f"\n\n修改前條文：\n{previous_content}" if previous_content else ""

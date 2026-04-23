@@ -24,6 +24,28 @@ async def test_summarize_news_returns_structured_list():
 
 
 @pytest.mark.asyncio
+async def test_generate_bill_action_items():
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text=json.dumps({
+        "impact_summary": "本草案提高加班費倍率，將增加人事成本",
+        "hr_preparation": "盤點加班實績，評估成本衝擊並擬定回應",
+    }))]
+    with patch("app.services.summarizer.anthropic.AsyncAnthropic") as MockAnthropic:
+        mock_client = AsyncMock()
+        mock_client.messages.create.return_value = mock_response
+        MockAnthropic.return_value = mock_client
+        summarizer = Summarizer()
+        result = await summarizer.generate_bill_action_items(
+            title="勞基法部分條文修正草案",
+            source_url="https://www.mol.gov.tw/1607/28162/28166/draft/123",
+            stage="委員會審查",
+        )
+    assert "impact_summary" in result
+    assert "hr_preparation" in result
+    assert result["impact_summary"].startswith("本草案")
+
+
+@pytest.mark.asyncio
 async def test_generate_law_action_items():
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text=json.dumps({
