@@ -1,16 +1,37 @@
 from __future__ import annotations
 import json
 import logging
+import re
 import anthropic
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
 
+def _extract_json(text: str):
+    """Parse JSON from Claude output, tolerating markdown fences and prose."""
+    if not text:
+        raise ValueError("empty response from model")
+    # Strip ```json ... ``` fences
+    fence = re.search(r"```(?:json)?\s*(.*?)```", text, re.DOTALL)
+    if fence:
+        text = fence.group(1)
+    text = text.strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Fallback: find first {...} or [...] block
+        match = re.search(r"(\[.*\]|\{.*\})", text, re.DOTALL)
+        if match:
+            return json.loads(match.group(1))
+        logger.error("Failed to parse JSON from model. Raw text: %r", text[:500])
+        raise
+
+
 class Summarizer:
     def __init__(self):
         self.client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
-        self.model = "claude-sonnet-4-6-20250514"
+        self.model = "claude-sonnet-4-6"
 
     async def summarize_news(self, news_items: list[dict]) -> list[dict]:
         """Take raw news items and return top 10 with summary + HR action."""
@@ -31,7 +52,7 @@ class Summarizer:
 回覆純 JSON 陣列格式，每個物件包含 title, summary, action 三個欄位。不要加入其他文字。"""}],
         )
         text = response.content[0].text
-        return json.loads(text)
+        return _extract_json(text)
 
     async def generate_law_action_items(self, law_name: str, article_number: str, content: str, previous_content: str = None) -> dict:
         """Generate HR action items for a law change."""
@@ -51,4 +72,4 @@ class Summarizer:
 不要加入其他文字。"""}],
         )
         text = response.content[0].text
-        return json.loads(text)
+        return _extract_json(text)

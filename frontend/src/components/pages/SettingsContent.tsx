@@ -47,13 +47,13 @@ export default function SettingsContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">訂閱設定</h1>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
+      <main className="max-w-xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-5 sm:mb-6">訂閱設定</h1>
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
               <p className="font-medium text-gray-800">月報電子報</p>
-              <p className="text-sm text-gray-500 mt-0.5">每月月報發布時，寄送到 {user?.email}</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5 break-all">每月月報發布時，寄送到 {user?.email}</p>
             </div>
             <button
               onClick={handleToggle}

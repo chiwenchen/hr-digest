@@ -24,7 +24,7 @@ export default function BillsRadarBlock({ items }: Props) {
   const activeItems = items.filter((b) => b.is_active !== false);
 
   return (
-    <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
       <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
         <span className="w-2 h-2 rounded-full bg-purple-500 inline-block"></span>
         法案雷達

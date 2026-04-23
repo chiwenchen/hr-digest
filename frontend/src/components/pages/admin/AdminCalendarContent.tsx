@@ -51,15 +51,15 @@ export default function AdminCalendarContent() {
   }
 
   if (loading) {
-    return <div className="p-8 text-gray-400">載入中...</div>;
+    return <div className="p-4 sm:p-8 text-gray-400">載入中...</div>;
   }
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">行事曆管理</h1>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-5 sm:mb-6">行事曆管理</h1>
       {error && <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3">{error}</div>}
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 mb-6">
         <h2 className="font-semibold text-gray-700 mb-4">新增項目</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -108,8 +108,8 @@ export default function AdminCalendarContent() {
           <div className="bg-gray-100 rounded-xl p-6 text-gray-500 text-sm">尚無行事曆項目</div>
         ) : (
           items.map((item) => (
-            <div key={item.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+            <div key={item.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                 <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded min-w-[40px] text-center">
                   {item.month} 月
                 </span>

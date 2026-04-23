@@ -1,10 +1,17 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import AuthProvider from '@/components/AuthProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'HR Digest — 人資法規月報',
   description: '台灣人資法規月報系統',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#f9fafb',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

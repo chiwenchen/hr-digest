@@ -296,6 +296,61 @@ async def create_subscriber(
 
 # ── Digest publish endpoint ───────────────────────────────────────────────────
 
+@router.get("/digest/{digest_id}")
+async def get_digest_for_review(
+    digest_id: int,
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Digest)
+        .where(Digest.id == digest_id)
+        .options(
+            selectinload(Digest.law_changes),
+            selectinload(Digest.news_candidates),
+        )
+    )
+    digest = result.scalar_one_or_none()
+    if not digest:
+        raise HTTPException(status_code=404, detail="月刊不存在")
+    return {
+        "id": digest.id,
+        "year": digest.year,
+        "month": digest.month,
+        "status": digest.status,
+        "published_at": digest.published_at.isoformat() if digest.published_at else None,
+        "law_changes": [
+            {
+                "id": lc.id,
+                "law_name": lc.law_name,
+                "article_number": lc.article_number,
+                "change_summary": lc.change_summary,
+                "action_items": lc.action_items,
+            }
+            for lc in digest.law_changes
+        ],
+        "news": [
+            {
+                "id": nc.id,
+                "title": nc.title,
+                "source": nc.source,
+                "url": nc.url,
+                "published_date": nc.published_date.isoformat() if nc.published_date else None,
+                "ai_summary": nc.ai_summary,
+                "ai_action": nc.ai_action,
+                "sort_order": nc.sort_order,
+                "is_approved": nc.is_approved,
+            }
+            for nc in sorted(
+                digest.news_candidates,
+                key=lambda n: (n.sort_order is None, n.sort_order or 0),
+            )
+        ],
+        "calendar": [],
+        "bills": [],
+    }
+
+
 @router.post("/digest/{digest_id}/publish")
 async def publish_digest(
     digest_id: int,
@@ -315,7 +370,7 @@ async def publish_digest(
         raise HTTPException(status_code=404, detail="月刊不存在")
 
     digest.status = "published"
-    digest.published_at = datetime.now(timezone.utc)
+    digest.published_at = datetime.now(timezone.utc).replace(tzinfo=None)
     await db.commit()
 
     # Fetch subscribers and additional data for email
@@ -405,8 +460,7 @@ async def dashboard(
 ):
     latest_result = await db.execute(
         select(Digest)
-        .where(Digest.status == "published")
-        .order_by(Digest.year.desc(), Digest.month.desc())
+        .order_by(Digest.year.desc(), Digest.month.desc(), Digest.id.desc())
         .limit(1)
     )
     latest = latest_result.scalar_one_or_none()
@@ -416,16 +470,11 @@ async def dashboard(
     )
     pending_news_count = pending_count_result.scalar_one()
 
-    latest_info = None
-    if latest:
-        latest_info = {
-            "id": latest.id,
-            "year": latest.year,
-            "month": latest.month,
-            "published_at": latest.published_at.isoformat() if latest.published_at else None,
-        }
-
     return {
-        "latest_digest": latest_info,
+        "latest_digest_id": latest.id if latest else None,
+        "latest_digest_status": latest.status if latest else None,
+        "latest_digest_year": latest.year if latest else None,
+        "latest_digest_month": latest.month if latest else None,
+        "latest_digest_published_at": latest.published_at.isoformat() if latest and latest.published_at else None,
         "pending_news_count": pending_news_count,
     }

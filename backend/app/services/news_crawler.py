@@ -1,5 +1,6 @@
 from __future__ import annotations
 import logging
+import re
 from dataclasses import dataclass
 from datetime import date
 from typing import Optional
@@ -7,7 +8,8 @@ import httpx
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
-MOL_NEWS_URL = "https://www.mol.gov.tw/1607/1632/"
+MOL_NEWS_URL = "https://www.mol.gov.tw/1607/1632/1633/lpsimplelist"
+_DATE_RE = re.compile(r"發布日期[：:]\s*(\d{4}-\d{2}-\d{2})")
 
 
 @dataclass(frozen=True)
@@ -28,18 +30,18 @@ class NewsCrawler:
     def parse_mol_html(self, html: str) -> list[RawNewsItem]:
         soup = BeautifulSoup(html, "html.parser")
         items = []
-        for li in soup.select("div.list ul li"):
-            a_tag = li.find("a")
-            date_tag = li.find("span", class_="date")
+        for block in soup.select("div.item_list2"):
+            a_tag = block.find("a")
             if not a_tag:
                 continue
             title = a_tag.get_text(strip=True)
             href = a_tag.get("href", "")
             url = f"https://www.mol.gov.tw{href}" if href.startswith("/") else href
             pub_date = None
-            if date_tag:
+            m = _DATE_RE.search(block.get_text(" ", strip=True))
+            if m:
                 try:
-                    pub_date = date.fromisoformat(date_tag.get_text(strip=True))
+                    pub_date = date.fromisoformat(m.group(1))
                 except ValueError:
                     pass
             items.append(

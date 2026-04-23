@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth';
 const navLinks = [
   { href: '/admin', label: '後台首頁', exact: true },
   { href: '/admin/crawl', label: '爬取新聞' },
+  { href: '/admin/review', label: '新聞審核' },
   { href: '/admin/bills', label: '法案管理' },
   { href: '/admin/calendar', label: '行事曆管理' },
   { href: '/admin/subscribers', label: '使用者管理' },
@@ -35,8 +36,37 @@ export default function AdminLayoutContent({ children }: { children: React.React
   if (!user || user.role !== 'admin') return null;
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <aside className="w-56 bg-white border-r border-gray-200 flex flex-col">
+    <div className="min-h-screen md:flex bg-gray-50">
+      {/* Mobile top bar */}
+      <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <div>
+          <h2 className="font-bold text-gray-800 text-sm">管理後台</h2>
+          <p className="text-[10px] text-gray-400">HR Digest</p>
+        </div>
+        <Link href="/" className="text-xs text-gray-500 hover:text-gray-700">← 返回前台</Link>
+      </div>
+      {/* Mobile horizontal scrolling nav */}
+      <nav className="md:hidden bg-white border-b border-gray-200 overflow-x-auto">
+        <div className="flex gap-1 px-3 py-2 whitespace-nowrap">
+          {navLinks.map((link) => {
+            const active = link.exact ? pathname === link.href : pathname.startsWith(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3 py-2 rounded-lg text-xs font-medium transition shrink-0 ${
+                  active ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-56 bg-white border-r border-gray-200 flex-col shrink-0">
         <div className="px-6 py-5 border-b border-gray-100">
           <h2 className="font-bold text-gray-800">管理後台</h2>
           <p className="text-xs text-gray-400 mt-0.5">HR Digest</p>
@@ -63,7 +93,7 @@ export default function AdminLayoutContent({ children }: { children: React.React
           <Link href="/" className="text-xs text-gray-400 hover:text-gray-600">← 返回前台</Link>
         </div>
       </aside>
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-w-0 overflow-auto">
         {children}
       </div>
     </div>
