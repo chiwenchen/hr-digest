@@ -22,9 +22,12 @@ async def test_build_monthly_digest_creates_draft(db):
     ]
     mock_bill_crawler = AsyncMock()
     mock_bill_crawler.crawl.return_value = []
+    mock_pdf_fetcher = AsyncMock()
+    mock_pdf_fetcher.fetch_text.return_value = None
     builder = DigestBuilder(
         law_crawler=mock_law_crawler, news_crawler=mock_news_crawler,
         bill_crawler=mock_bill_crawler, summarizer=mock_summarizer, db=db,
+        bill_pdf_fetcher=mock_pdf_fetcher,
     )
     digest = await builder.build(year=2026, month=4)
     assert digest.status == "draft"
@@ -66,9 +69,13 @@ async def test_process_bills_upserts_existing_and_inserts_new(db):
         "hr_preparation": "HR 準備事項",
     }
 
+    mock_pdf_fetcher = AsyncMock()
+    mock_pdf_fetcher.fetch_text.return_value = "草案全文：規範製造者保存產銷資料 10 年"
+
     builder = DigestBuilder(
         law_crawler=mock_law_crawler, news_crawler=mock_news_crawler,
         bill_crawler=mock_bill_crawler, summarizer=mock_summarizer, db=db,
+        bill_pdf_fetcher=mock_pdf_fetcher,
     )
     await builder.build(year=2026, month=5)
 
@@ -84,5 +91,45 @@ async def test_process_bills_upserts_existing_and_inserts_new(db):
     assert by_url["https://mol/B"].hr_preparation == "HR 準備事項"
     assert by_url["https://mol/B"].is_active is True
 
-    # Summarizer called exactly once (for the new bill only, not the existing upsert)
+    # PDF fetched once for the new bill only (not for the upsert)
+    mock_pdf_fetcher.fetch_text.assert_awaited_once_with("https://mol/B")
+
+    # Summarizer called once with draft_text from PDF
     assert mock_summarizer.generate_bill_action_items.await_count == 1
+    call_kwargs = mock_summarizer.generate_bill_action_items.await_args.kwargs
+    assert call_kwargs["draft_text"] == "草案全文：規範製造者保存產銷資料 10 年"
+
+
+@pytest.mark.asyncio
+async def test_process_bills_persists_null_hr_preparation(db):
+    """When summarizer returns hr_preparation=None (non-HR scope), the
+    bill row must store NULL — not coerce to empty string."""
+    mock_law_crawler = MagicMock()
+    mock_law_crawler.fetch_all_laws = AsyncMock(return_value=[])
+    mock_law_crawler.detect_changes.return_value = []
+    mock_news_crawler = AsyncMock()
+    mock_news_crawler.crawl.return_value = []
+    mock_bill_crawler = AsyncMock()
+    mock_bill_crawler.crawl.return_value = [
+        RawBillItem(title="X 草案", url="https://mol/X", stage="預告中", published_date=date(2026, 5, 1)),
+    ]
+    mock_summarizer = AsyncMock()
+    mock_summarizer.summarize_news.return_value = []
+    mock_summarizer.generate_bill_action_items.return_value = {
+        "impact_summary": "本草案主要規範製造者，非 HR 直接主責",
+        "hr_preparation": None,
+    }
+    mock_pdf_fetcher = AsyncMock()
+    mock_pdf_fetcher.fetch_text.return_value = None
+
+    builder = DigestBuilder(
+        law_crawler=mock_law_crawler, news_crawler=mock_news_crawler,
+        bill_crawler=mock_bill_crawler, summarizer=mock_summarizer, db=db,
+        bill_pdf_fetcher=mock_pdf_fetcher,
+    )
+    await builder.build(year=2026, month=5)
+
+    result = await db.execute(select(Bill).where(Bill.source_url == "https://mol/X"))
+    bill = result.scalar_one()
+    assert bill.hr_preparation is None
+    assert "非 HR 直接主責" in bill.impact_summary

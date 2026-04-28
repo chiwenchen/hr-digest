@@ -7,18 +7,25 @@ from app.db.models import Digest, LawChange, NewsCandidate, Bill
 from app.services.law_crawler import LawCrawler
 from app.services.news_crawler import NewsCrawler
 from app.services.bill_crawler import BillCrawler
+from app.services.bill_pdf_fetcher import BillPdfFetcher
 from app.services.summarizer import Summarizer
 
 logger = logging.getLogger(__name__)
 
 
 class DigestBuilder:
-    def __init__(self, law_crawler: LawCrawler, news_crawler: NewsCrawler, bill_crawler: BillCrawler, summarizer: Summarizer, db: AsyncSession):
+    def __init__(
+        self,
+        law_crawler: LawCrawler, news_crawler: NewsCrawler, bill_crawler: BillCrawler,
+        summarizer: Summarizer, db: AsyncSession,
+        bill_pdf_fetcher: BillPdfFetcher | None = None,
+    ):
         self.law_crawler = law_crawler
         self.news_crawler = news_crawler
         self.bill_crawler = bill_crawler
         self.summarizer = summarizer
         self.db = db
+        self.bill_pdf_fetcher = bill_pdf_fetcher or BillPdfFetcher()
 
     async def build(self, year: int, month: int) -> Digest:
         digest = Digest(year=year, month=month, status="draft")
@@ -67,8 +74,10 @@ class DigestBuilder:
                 existing.current_stage = item.stage
                 existing.title = item.title
                 continue
+            draft_text = await self.bill_pdf_fetcher.fetch_text(item.url)
             enrichment = await self.summarizer.generate_bill_action_items(
                 title=item.title, source_url=item.url, stage=item.stage,
+                draft_text=draft_text,
             )
             self.db.add(Bill(
                 title=item.title,
