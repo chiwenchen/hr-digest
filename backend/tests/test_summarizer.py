@@ -46,6 +46,55 @@ async def test_generate_bill_action_items():
 
 
 @pytest.mark.asyncio
+async def test_generate_bill_action_items_includes_draft_text_in_prompt():
+    """When draft_text is provided, it must reach the Claude prompt so the
+    model can ground its summary in the actual law content instead of the
+    title alone."""
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text=json.dumps({
+        "impact_summary": "x", "hr_preparation": "y",
+    }))]
+    captured = {}
+    async def fake_create(**kwargs):
+        captured["messages"] = kwargs["messages"]
+        return mock_response
+    with patch("app.services.summarizer.anthropic.AsyncAnthropic") as MockAnthropic:
+        mock_client = MagicMock()
+        mock_client.messages.create = fake_create
+        MockAnthropic.return_value = mock_client
+        summarizer = Summarizer()
+        await summarizer.generate_bill_action_items(
+            title="X 草案", source_url="https://example.com", stage="預告中",
+            draft_text="此草案規範製造者保存產銷資料 10 年",
+        )
+    user_text = captured["messages"][0]["content"]
+    assert "保存產銷資料" in user_text
+    assert "草案全文" in user_text
+
+
+@pytest.mark.asyncio
+async def test_generate_bill_action_items_allows_null_hr_preparation():
+    """For non-HR-scope drafts the model is permitted to return
+    hr_preparation=null. Summarizer must not coerce that to a string."""
+    mock_response = MagicMock()
+    mock_response.content = [MagicMock(text=json.dumps({
+        "impact_summary": "本草案主要規範製造者，非 HR 直接主責",
+        "hr_preparation": None,
+    }))]
+    with patch("app.services.summarizer.anthropic.AsyncAnthropic") as MockAnthropic:
+        mock_client = AsyncMock()
+        mock_client.messages.create.return_value = mock_response
+        MockAnthropic.return_value = mock_client
+        summarizer = Summarizer()
+        result = await summarizer.generate_bill_action_items(
+            title="機械設備器具監督管理辦法部分條文修正草案",
+            source_url="https://example.com", stage="預告中",
+        )
+    assert result["hr_preparation"] is None
+    assert "非 HR 直接主責" in result["impact_summary"]
+
+
+@pytest.mark.asyncio
 async def test_generate_law_action_items():
     mock_response = MagicMock()
     mock_response.content = [MagicMock(text=json.dumps({

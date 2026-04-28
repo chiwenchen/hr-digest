@@ -8,6 +8,7 @@ passlib[bcrypt]==1.7.4
 anthropic==0.42.0
 httpx==0.28.1
 beautifulsoup4==4.12.3
+pypdf==5.1.0
 apscheduler==3.10.4
 resend==2.7.0
 pydantic-settings==2.7.1
